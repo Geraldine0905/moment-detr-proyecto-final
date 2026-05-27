@@ -90,7 +90,7 @@ class MomentDETRPredictor:
 def run_example():
     # load example data
     from utils.basic_utils import load_jsonl
-    video_path = "run_on_video/example/RoripwjYFp8_60.0_210.0.mp4"
+    video_path = "videos/repolarizador.mp4"
     query_path = "run_on_video/example/queries.jsonl"
     queries = load_jsonl(query_path)
     query_text_list = [e["query"] for e in queries]
@@ -103,7 +103,7 @@ def run_example():
     moment_detr_predictor = MomentDETRPredictor(
         ckpt_path=ckpt_path,
         clip_model_name_or_path=clip_model_name_or_path,
-        device="cuda"
+        device = "cpu"
     )
     print("Run prediction...")
     predictions = moment_detr_predictor.localize_moment(
@@ -111,15 +111,23 @@ def run_example():
 
     # print data
     for idx, query_data in enumerate(queries):
-        print("-"*30 + f"idx{idx}")
-        print(f">> query: {query_data['query']}")
-        print(f">> video_path: {video_path}")
-        print(f">> GT moments: {query_data['relevant_windows']}")
-        print(f">> Predicted moments ([start_in_seconds, end_in_seconds, score]): "
-              f"{predictions[idx]['pred_relevant_windows']}")
-        print(f">> GT saliency scores (only localized 2-sec clips): {query_data['saliency_scores']}")
-        print(f">> Predicted saliency scores (for all 2-sec clip): "
-              f"{predictions[idx]['pred_saliency_scores']}")
+        #print("-"*30 + f"idx{idx}")
+        #print(f">> query: {query_data['query']}")
+        #print(f">> video_path: {video_path}")
+        #print(f">> GT moments: {query_data['relevant_windows']}")
+        #print(f">> Predicted moments ([start_in_seconds, end_in_seconds, score]): "
+             # f"{predictions[idx]['pred_relevant_windows']}")
+        #print(f">> GT saliency scores (only localized 2-sec clips): {query_data['saliency_scores']}")
+        #print(f">> Predicted saliency scores (for all 2-sec clip): "
+             # f"{predictions[idx]['pred_saliency_scores']}")
+
+        resultado = predictions[idx]["pred_relevant_windows"][0]
+
+        print("-" * 40)
+        print(f"Consulta: {query_data['query']}")
+        print(f"Video: {video_path}")
+        print(f"Momento detectado: {resultado[0]:.2f}s - {resultado[1]:.2f}s")
+        print(f"Confianza: {resultado[2]:.4f}")
 
 
 if __name__ == "__main__":
