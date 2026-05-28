@@ -178,7 +178,28 @@ La innovacion principal del enfoque es unir:
 - Deteccion de highlights por clip.
 - Uso de lenguaje natural como condicion de busqueda.
 
-![Arquitectura general de Moment-DETR](./res/model_overview.png)
+### Arquitectura
+
+La siguiente imagen resume la arquitectura de Moment-DETR utilizada como base del proyecto:
+
+![Arquitectura general de Moment-DETR](./capturas/model_overview.png)
+
+La imagen se interpreta de izquierda a derecha. En la parte inferior izquierda aparecen las entradas del modelo: un video representado como una secuencia de clips y una consulta textual, por ejemplo `"Man in hoodie unpacks his groceries."`. Antes de entrar al Transformer, ambos elementos se convierten en embeddings numericos. En este proyecto, para la demo de inferencia, esos embeddings se obtienen con CLIP: los frames del video se codifican con el encoder visual y la consulta con el encoder textual.
+
+El primer bloque grande es el **Transformer Encoder**. Este bloque recibe la secuencia multimodal formada por tokens de video y texto. Su funcion es contextualizar la informacion: cada clip puede atender a otros clips y tambien a los tokens de la consulta. Por eso, despues del encoder, las representaciones de video ya no son solo visuales, sino que estan condicionadas por el lenguaje.
+
+En la parte superior izquierda se muestra una salida auxiliar de **saliency scores**. Estos puntajes se calculan sobre la memoria del encoder correspondiente a los clips del video. Su objetivo es indicar que clips son mas relevantes o llamativos para la consulta. Durante entrenamiento, esta rama se optimiza con una perdida tipo hinge para que clips positivos tengan mayor score que clips negativos.
+
+El segundo bloque grande es el **Transformer Decoder**. A diferencia del encoder, el decoder no recibe directamente otra frase del usuario, sino un conjunto de **Moment Queries**, que son embeddings entrenables. Cada query funciona como una ranura de deteccion: intenta encontrar un posible momento relevante dentro del video. En el checkpoint usado por este proyecto hay `num_queries = 10`, por lo tanto el modelo produce hasta 10 candidatos de ventana temporal.
+
+En la parte derecha de la imagen aparecen las salidas de cada moment query. Cada una pasa por una red feed-forward (`FFN`) que predice dos cosas:
+
+- Una clase: **foreground** si la query corresponde a un momento relevante, o **background** si no encontro un momento util.
+- Un **span temporal**, es decir, una ventana `[inicio, fin]` del video.
+
+Las ventanas coloreadas sobre la linea de frames representan los momentos candidatos. Las queries clasificadas como foreground se consideran predicciones relevantes, mientras que las background se descartan o reciben baja confianza. Para entrenar estas salidas, Moment-DETR usa **Cross-Entropy Loss** para clasificacion y **L1 + IoU Loss** para ajustar la ubicacion temporal de los spans.
+
+En resumen, la arquitectura combina tres ideas clave: primero fusiona video y texto con el encoder, luego usa queries aprendibles en el decoder para proponer momentos, y finalmente produce tanto ventanas temporales como scores de saliencia. Esta es la razon por la que el modelo puede responder a una consulta textual devolviendo un intervalo concreto del video.
 
 ## 4. Metodologia
 
